@@ -183,7 +183,7 @@ public class MapKeeperClient extends DB {
                 HashMap<String, ByteIterator> oldval = new HashMap<String, ByteIterator>();
                 read(table, key, null, oldval);
                 for(Map.Entry<String, ByteIterator> entry : values.entrySet()) {
-                    oldval.put(entry.getKey(), entry.getValue()));
+                    oldval.put(entry.getKey(), entry.getValue());
                 }
                 values = oldval;
             }

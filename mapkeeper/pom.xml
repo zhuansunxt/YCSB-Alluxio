@@ -29,19 +29,23 @@ LICENSE file.
   <name>Mapkeeper DB Binding</name>
   <packaging>jar</packaging>
 
-  <dependencies>
-     <dependency>
-       <groupId>com.yahoo.mapkeeper</groupId>
-       <artifactId>mapkeeper</artifactId>
-       <version>${mapkeeper.version}</version>
-     </dependency>
-     <dependency>
-       <groupId>com.yahoo.ycsb</groupId>
-       <artifactId>core</artifactId>
-       <version>${project.version}</version>
-       <scope>provided</scope>
-     </dependency>
-  </dependencies>
+    <dependencies>
+        <dependency>
+            <groupId>com.yahoo.mapkeeper</groupId>
+            <artifactId>mapkeeper</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.ycsb</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+            <version>0.8.0</version>
+        </dependency>
+    </dependencies>
   <repositories>
     <repository>
       <id>mapkeeper-releases</id>

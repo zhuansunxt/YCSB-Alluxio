@@ -82,9 +82,6 @@ LICENSE file.
           <executions>
             <execution>
               <id>validate</id>
-              <configuration>
-                <configLocation>../checkstyle.xml</configLocation>
-              </configuration>
             </execution>
           </executions>
         </plugin>
