@@ -5,16 +5,21 @@ import alluxio.Configuration;
 import alluxio.Constants;
 import alluxio.PropertyKey;
 import alluxio.client.ClientContext;
+import alluxio.client.block.BlockMasterClient;
+import alluxio.client.block.RetryHandlingBlockMasterClient;
 import alluxio.client.file.FileSystemContext;
 import alluxio.client.file.FileSystemMasterClient;
 import alluxio.client.file.options.CreateFileOptions;
 import alluxio.client.file.options.OpenFileOptions;
+import alluxio.security.authentication.AuthType;
 import com.yahoo.ycsb.ByteIterator;
 import com.yahoo.ycsb.DB;
 import com.yahoo.ycsb.DBException;
 import com.yahoo.ycsb.Status;
 import com.yahoo.ycsb.StringByteIterator;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.http.impl.client.NullBackoffStrategy;
 import org.apache.http.impl.cookie.PublicSuffixDomainFilter;
 import org.apache.thrift.protocol.TMultiplexedProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -23,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.Set;
@@ -31,6 +37,7 @@ import java.util.Vector;
 public class AlluxioClient extends DB {
 
   private static final Logger LOG = LoggerFactory.getLogger(Constants.LOGGER_TYPE);
+  private BlockMasterClient mBlockMasterClient = null;
   private FileSystemContext mFileSystemContext = null;
   private FileSystemMasterClient mFileSystemMasterClient = null;
 
@@ -62,25 +69,39 @@ public class AlluxioClient extends DB {
       }
     }
 
-    // Initialize class members.
-    mFileSystemContext = FileSystemContext.INSTANCE;
-    mFileSystemMasterClient = mFileSystemContext.acquireMasterClient();
+    // Initialize clients.
     mMasterLocation = new AlluxioURI(masterAddress);
-    mTestDir = new AlluxioURI(mTestPath);
     Configuration.set(PropertyKey.MASTER_HOSTNAME, mMasterLocation.getHost());
     Configuration.set(PropertyKey.MASTER_RPC_PORT, Integer.toString(mMasterLocation.getPort()));
+    Configuration.set(PropertyKey.SECURITY_AUTHENTICATION_TYPE, AuthType.NOSASL);
+    Configuration.set(PropertyKey.SECURITY_AUTHORIZATION_PERMISSION_ENABLED, false);
+
+    mFileSystemContext = FileSystemContext.INSTANCE;
+    mFileSystemMasterClient = mFileSystemContext.acquireMasterClient();
+    mBlockMasterClient = new RetryHandlingBlockMasterClient(
+            new InetSocketAddress(mMasterLocation.getHost(), mMasterLocation.getPort()));
+
+    // Initialize other configurations
+    mTestDir = new AlluxioURI(mTestPath);
     ClientContext.init();
 
     System.out.println("Master hostname:" + Configuration.get(PropertyKey.MASTER_HOSTNAME));
     System.out.println("Master port:" + Configuration.get(PropertyKey.MASTER_RPC_PORT));
   }
 
-
   @Override
   public Status read(
           String table, String key, Set<String> fields,
           HashMap<String, ByteIterator> result) {
-    return Status.NOT_IMPLEMENTED;
+    try {
+      long capacity = mBlockMasterClient.getCapacityBytes();
+      System.out.println("Capacity:" + capacity);
+    } catch (Exception e) {
+      System.out.println("Not possible to issue read-only RPC");
+      e.printStackTrace();
+      return Status.ERROR;
+    }
+    return Status.OK;
   }
 
   @Override
@@ -98,8 +119,16 @@ public class AlluxioClient extends DB {
 
   @Override
   public Status insert(
-          String table, String key, HashMap<String, ByteIterator> values) {
-    return Status.NOT_IMPLEMENTED;
+          String table, String key, HashMap<String, ByteIterator> values){
+    try {
+      long capacity = mBlockMasterClient.getUsedBytes();
+      System.out.println("Used:" + capacity);
+    } catch (Exception e) {
+      System.out.println("Not possible to issue read-only RPC");
+      e.printStackTrace();
+      return Status.ERROR;
+    }
+    return Status.OK;
   }
 
   @Override
