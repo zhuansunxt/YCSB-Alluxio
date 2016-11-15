@@ -14,7 +14,6 @@ import alluxio.client.file.options.*;
 import alluxio.exception.AlluxioException;
 import alluxio.exception.FileAlreadyExistsException;
 import alluxio.security.authentication.AuthType;
-import alluxio.wire.WorkerInfo;
 import com.yahoo.ycsb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,14 +38,6 @@ public class AlluxioClient extends DB {
   @Override
   public void cleanup() throws DBException {
     System.out.println("[Alluxio-YCSB] cleanup called");
-
-    try {
-      DeleteOptions deleteOption = DeleteOptions.defaults();
-      deleteOption.setRecursive(true);
-      mFileSystemMasterClient.delete(new AlluxioURI(mDefaultDir), deleteOption);
-    } catch (Exception e){
-      System.err.println("Could not delete the default directory "+ mDefaultDir);
-    }
 
     try {
       mBlockMasterClient.close();
@@ -112,12 +103,23 @@ public class AlluxioClient extends DB {
     System.out.println("Master hostname:" + Configuration.get(PropertyKey.MASTER_HOSTNAME));
     System.out.println("Master port:" + Configuration.get(PropertyKey.MASTER_RPC_PORT));
 
-    // Create default directory for insertion.
+    // Create default directory for insertion. If already exists, delete the directory.
+    mDefaultDir = "/usertable";
+    AlluxioURI alluxioDefaultDir = new AlluxioURI(mDefaultDir);
     try {
-      mDefaultDir = "/usertable";
-      AlluxioURI alluxioDefaultDir = new AlluxioURI(mDefaultDir);
+      DeleteOptions deleteOption = DeleteOptions.defaults();
+      deleteOption.setRecursive(true);
+      mFileSystemMasterClient.delete(alluxioDefaultDir, deleteOption);
+    } catch (Exception e) {
+      if (e instanceof AlluxioException)
+        System.out.println("Default directory " + mDefaultDir + " already exists");
+      e.printStackTrace();
+    }
+
+    try {
       mFileSystemMasterClient.createDirectory(alluxioDefaultDir, CreateDirectoryOptions.defaults());
     } catch (Exception e) {
+      System.err.println("Could not create default directory " + mDefaultDir);
       e.printStackTrace();
     }
   }
