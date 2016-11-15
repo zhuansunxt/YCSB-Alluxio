@@ -103,18 +103,9 @@ public class AlluxioClient extends DB {
     System.out.println("Master hostname:" + Configuration.get(PropertyKey.MASTER_HOSTNAME));
     System.out.println("Master port:" + Configuration.get(PropertyKey.MASTER_RPC_PORT));
 
-    // Create default directory for insertion. If already exists, delete the directory.
+    // Create default directory for insertion.
     mDefaultDir = "/usertable";
     AlluxioURI alluxioDefaultDir = new AlluxioURI(mDefaultDir);
-    try {
-      DeleteOptions deleteOption = DeleteOptions.defaults();
-      deleteOption.setRecursive(true);
-      mFileSystemMasterClient.delete(alluxioDefaultDir, deleteOption);
-    } catch (Exception e) {
-      if (e instanceof AlluxioException)
-        System.out.println("Default directory " + mDefaultDir + " already exists");
-      e.printStackTrace();
-    }
 
     try {
       mFileSystemMasterClient.createDirectory(alluxioDefaultDir, CreateDirectoryOptions.defaults());
