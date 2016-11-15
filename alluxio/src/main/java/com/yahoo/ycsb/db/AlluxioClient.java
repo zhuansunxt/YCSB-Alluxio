@@ -24,20 +24,14 @@ import java.net.InetSocketAddress;
 import java.util.*;
 
 public class AlluxioClient extends DB {
-
   private static final Logger LOG = LoggerFactory.getLogger(Constants.LOGGER_TYPE);
+
   private BlockMasterClient mBlockMasterClient = null;
   private FileSystemContext mFileSystemContext = null;
   private FileSystemMasterClient mFileSystemMasterClient = null;
 
   private AlluxioURI mMasterLocation = null;
   private String defaultDir = null;
-  private AlluxioURI mTestDir = null;
-  private String mTestPath = "/default_rpc_test_files";
-
-  // only for checking connectivity.
-  private String getStatusTestDir = "/tmp_dir_ycsb_getstatus";
-  private String getStatusTestFile = "/tmp_dir_ycsb_getstatus/tmp_file_ycsb_getstatus";
 
   /**
    * Cleanup client resources.
@@ -75,15 +69,14 @@ public class AlluxioClient extends DB {
     }
   }
 
-  // TODO(Xiaotong): make the initialization configurable by setting configuration file.
   @Override
   public void init() throws DBException {
     System.out.println("[Alluxio-YCSB] init called");
-    //String masterAddress = null;
-    String masterAddress = "alluxio://localhost:19998";      // default value of master address: localhost.
 
-    // Load configuration from property files.
-    // TODO(Xiaotong): figure out how to read from property file.
+    // TODO: master address should be initialized by reading config file.
+    String masterAddress = "alluxio://localhost:19998";
+
+    // TODO: Load configuration from property files.
     if (masterAddress == null) {
       try {
         InputStream propFile = AlluxioClient.class.getClassLoader()
@@ -104,6 +97,7 @@ public class AlluxioClient extends DB {
     mMasterLocation = new AlluxioURI(masterAddress);
     Configuration.set(PropertyKey.MASTER_HOSTNAME, mMasterLocation.getHost());
     Configuration.set(PropertyKey.MASTER_RPC_PORT, Integer.toString(mMasterLocation.getPort()));
+    // Authentication configuration: make client compatible with all types of master RPC server.
     Configuration.set(PropertyKey.SECURITY_AUTHENTICATION_TYPE, AuthType.NOSASL);
     Configuration.set(PropertyKey.SECURITY_AUTHORIZATION_PERMISSION_ENABLED, false);
 
@@ -112,16 +106,14 @@ public class AlluxioClient extends DB {
     mBlockMasterClient = new RetryHandlingBlockMasterClient(
             new InetSocketAddress(mMasterLocation.getHost(), mMasterLocation.getPort()));
 
-    mTestDir = new AlluxioURI(mTestPath);
     ClientContext.init();
 
-    // console logging.
+    // Console logging metadata master server's address.
     System.out.println("Master hostname:" + Configuration.get(PropertyKey.MASTER_HOSTNAME));
     System.out.println("Master port:" + Configuration.get(PropertyKey.MASTER_RPC_PORT));
 
-    // create default directory for insertion.
+    // Create default directory for insertion.
     try {
-      // TODO(Xiaotong): figure out how to configure the table(directory) to use.
       defaultDir = "/usertable";
       AlluxioURI alluxioDefaultDir = new AlluxioURI(defaultDir);
       mFileSystemMasterClient.createDirectory(alluxioDefaultDir, CreateDirectoryOptions.defaults());
@@ -249,74 +241,5 @@ public class AlluxioClient extends DB {
           Vector<HashMap<String, ByteIterator>> result) {
     System.out.println("[Alluxio-YCSB] scan called");
     return Status.NOT_IMPLEMENTED;
-  }
-
-
-
-
-  /**
-   * For debugging usage. Check all RPCs' connectivity with Alluxio master server.
-   * @return YCSB status.
-   */
-  private Status checkRPCConnectivity() {
-    try {
-      // Read-only RPCs.
-      long capacity = mBlockMasterClient.getCapacityBytes();
-      long used = mBlockMasterClient.getUsedBytes();
-      List<WorkerInfo> workerInfoList = mBlockMasterClient.getWorkerInfoList();
-      AlluxioURI fileForRead = new AlluxioURI(getStatusTestFile);
-      URIStatus status = mFileSystemMasterClient.getStatus(fileForRead);
-
-      System.out.println("--- Read-only-RPC-Connectivity-Check ---");
-      System.out.println("Read-only RPCs");
-      System.out.println("Capacity: " + capacity);
-      System.out.println("Used-bytes: " + used);
-      System.out.println("Worker-info-list: ");
-      for (WorkerInfo worker : workerInfoList) {
-        System.out.println("[Worker" + worker.getId() + "] " + worker.getState());
-      }
-      System.out.println("Status for test file " + getStatusTestFile + ":");
-      System.out.println("[Group] " + status.getGroup());
-      System.out.println("[Name] " + status.getName());
-      System.out.println("[Owner] " + status.getOwner());
-      System.out.println("[UFS-path] " + status.getUfsPath());
-      System.out.println("[Creation-time] " + status.getCreationTimeMs());
-      System.out.println("------------------------------------------");
-
-      // Update RPCs.
-    } catch (Exception e) {
-      System.out.println("Unable to issue all types of RPCs to Alluxio Master");
-      e.printStackTrace();
-      return Status.ERROR;
-    }
-    return Status.OK;
-  }
-
-  /**
-   * Creating a file for read-only RPC getStatus() invocation.
-   * @param dir directory containing that file.
-   * @param file file path for getStatus().
-   */
-  private void createFileForReadonlyRPC(String dir, String file) {
-    AlluxioURI dirPath = new AlluxioURI(dir);
-    AlluxioURI filePath = new AlluxioURI(file);
-
-    // Delete dir and file if exists.
-    try {
-      mFileSystemMasterClient.delete(dirPath, DeleteOptions.defaults());
-      mFileSystemMasterClient.delete(filePath, DeleteOptions.defaults());
-    } catch (Exception e) {
-      // Ignore Alluxio exception.
-      if (!(e instanceof AlluxioException)) e.printStackTrace();
-    }
-
-    // Create dir and file.
-    try {
-      mFileSystemMasterClient.createDirectory(dirPath, CreateDirectoryOptions.defaults());
-      mFileSystemMasterClient.createFile(filePath, CreateFileOptions.defaults());
-    } catch (Exception e) {
-      System.out.println("Unable to create directory and file for read-only RPC");
-      e.printStackTrace();
-    }
   }
 }
