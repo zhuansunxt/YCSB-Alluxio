@@ -31,7 +31,7 @@ public class AlluxioClient extends DB {
   private FileSystemMasterClient mFileSystemMasterClient = null;
 
   private AlluxioURI mMasterLocation = null;
-  private String defaultDir = null;
+  private String mDefaultDir = null;
 
   /**
    * Cleanup client resources.
@@ -43,9 +43,9 @@ public class AlluxioClient extends DB {
     try {
       DeleteOptions deleteOption = DeleteOptions.defaults();
       deleteOption.setRecursive(true);
-      mFileSystemMasterClient.delete(new AlluxioURI(defaultDir), deleteOption);
+      mFileSystemMasterClient.delete(new AlluxioURI(mDefaultDir), deleteOption);
     } catch (Exception e){
-      System.err.println("Could not delete the default directory "+ defaultDir);
+      System.err.println("Could not delete the default directory "+ mDefaultDir);
     }
 
     try {
@@ -114,8 +114,8 @@ public class AlluxioClient extends DB {
 
     // Create default directory for insertion.
     try {
-      defaultDir = "/usertable";
-      AlluxioURI alluxioDefaultDir = new AlluxioURI(defaultDir);
+      mDefaultDir = "/usertable";
+      AlluxioURI alluxioDefaultDir = new AlluxioURI(mDefaultDir);
       mFileSystemMasterClient.createDirectory(alluxioDefaultDir, CreateDirectoryOptions.defaults());
     } catch (Exception e) {
       e.printStackTrace();
