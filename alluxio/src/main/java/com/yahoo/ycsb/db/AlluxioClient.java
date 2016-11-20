@@ -64,8 +64,11 @@ public class AlluxioClient extends DB {
   public void init() throws DBException {
     System.out.println("[Alluxio-YCSB] init called");
 
-    // TODO: master address should be initialized by reading config file.
-    String masterAddress = "alluxio://localhost:19998";
+    // Set this before loading the master.
+    String masterIpAddress = "localhost";
+    String masterPort = "19998";
+
+    String masterAddress = "alluxio://" + masterIpAddress + ":" + masterPort;
 
     // TODO: Load configuration from property files.
     if (masterAddress == null) {
