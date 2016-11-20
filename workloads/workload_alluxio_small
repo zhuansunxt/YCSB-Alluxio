@@ -19,7 +19,7 @@ workload=com.yahoo.ycsb.workloads.CoreWorkload
 # the load phase or the number of records already in the
 # table before the run phase.
 # For Alluxio benchmark, this is the number of files to read.
-recordcount=10
+recordcount=100
 
 # There is no default setting for operationcount but it is
 # required to be set.
@@ -31,7 +31,7 @@ operationcount=10000
 #insertcount=
 
 # The offset of the first insertion
-insertstart=0
+#insertstart=0
 
 # -------------------Set Operation Proportion-------------------
 
@@ -58,7 +58,7 @@ scanproportion=0
 # -------------------End Operation Proportion-------------------
 
 # Should records be inserted in order or pseudo-randomly
-insertorder=hashed
+#insertorder=hashed
 #insertorder=ordered
 
 # The distribution of requests across the keyspace
@@ -79,7 +79,7 @@ hotspotopnfraction=0.8
 table=usertable
 
 # How the latency measurements are presented
-measurementtype=histogram
+#measurementtype=histogram
 #measurementtype=timeseries
 #measurementtype=raw
 # When measurementtype is set to raw, measurements will be output
