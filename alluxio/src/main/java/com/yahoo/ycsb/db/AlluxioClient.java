@@ -137,7 +137,7 @@ public class AlluxioClient extends DB {
     try {
       mFileSystemMasterClient.delete(alluxioFile, DeleteOptions.defaults());
     } catch (Exception e) {
-      e.printStackTrace();
+      //e.printStackTrace();
     }
 
     try {
