@@ -42,7 +42,6 @@ public class AlluxioClient extends DB {
   public void cleanup() throws DBException {
     try {
       mFileSystemMasterClient.close();
-      System.out.println("Allxio FS Master client is shut down successfully");
     } catch (Exception e) {
       System.err.println("Could not shut down Alluxio FS Master client");
     } finally {
@@ -54,7 +53,6 @@ public class AlluxioClient extends DB {
 
   @Override
   public void init() throws DBException {
-    System.out.println("[Alluxio-YCSB] init");
 
     // Set this before loading the master.
     String masterIpAddress = "localhost";
@@ -96,8 +94,9 @@ public class AlluxioClient extends DB {
     try {
       mFileSystemMasterClient.createDirectory(alluxioDefaultDir, CreateDirectoryOptions.defaults());
     } catch (Exception e) {
-      System.err.println("Could not create default directory " + mDefaultDir);
-      e.printStackTrace();
+      if (!(e instanceof FileAlreadyExistsException)) {
+        e.printStackTrace();
+      }
     }
 
   }
@@ -148,7 +147,6 @@ public class AlluxioClient extends DB {
    */
   @Override
   public Status delete(String dir, String file) {
-    //System.out.println("[Alluxio-YCSB] delete called");
     try {
       // "/foo/bar" = "/foo" + "/" + "bar".
       AlluxioURI fullpath = new AlluxioURI("/"+dir+"/"+file);
@@ -177,7 +175,6 @@ public class AlluxioClient extends DB {
   public Status read(
           String dir, String file, Set<String> fields,
           HashMap<String, ByteIterator> result) {
-    //System.out.println("[Alluxio-YCSB] read called");
     try {
       String fullPath = "/"+dir+"/"+file;
       AlluxioURI alluxioFile = new AlluxioURI(fullPath);
@@ -206,7 +203,6 @@ public class AlluxioClient extends DB {
   @Override
   public Status update(
           String dir, String file, HashMap<String, ByteIterator> values) {
-    //System.out.println("[Alluxio-YCSB] update called");
     try {
       String fullPath = "/"+dir+"/"+file;
       AlluxioURI alluxioFile = new AlluxioURI(fullPath);
