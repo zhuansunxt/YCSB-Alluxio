@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class AlluxioClient extends DB {
   private static final Logger LOG = LoggerFactory.getLogger(Constants.LOGGER_TYPE);
 
-  private BlockMasterClient mBlockMasterClient = null;
+  //private BlockMasterClient mBlockMasterClient = null;
   private FileSystemContext mFileSystemContext = null;
   private FileSystemMasterClient mFileSystemMasterClient = null;
 
@@ -40,16 +40,6 @@ public class AlluxioClient extends DB {
    */
   @Override
   public void cleanup() throws DBException {
-    try {
-      mBlockMasterClient.close();
-      System.out.println("Allxio Block Master client is shut down successfully");
-    } catch (Exception e) {
-      System.err.println("Could not shut down Alluxio Block Master Client");
-    } finally {
-      if (mBlockMasterClient != null)
-        mBlockMasterClient = null;
-    }
-
     try {
       mFileSystemMasterClient.close();
       System.out.println("Allxio FS Master client is shut down successfully");
@@ -94,12 +84,10 @@ public class AlluxioClient extends DB {
     Configuration.set(PropertyKey.MASTER_RPC_PORT, Integer.toString(mMasterLocation.getPort()));
     Configuration.set(PropertyKey.SECURITY_AUTHENTICATION_TYPE, AuthType.NOSASL);
     Configuration.set(PropertyKey.SECURITY_AUTHORIZATION_PERMISSION_ENABLED, false);
+    Configuration.set(PropertyKey.USER_FILE_MASTER_CLIENT_THREADS, 1000);
 
     mFileSystemContext = FileSystemContext.INSTANCE;
     mFileSystemMasterClient = mFileSystemContext.acquireMasterClient();
-    mBlockMasterClient = new RetryHandlingBlockMasterClient(
-            new InetSocketAddress(mMasterLocation.getHost(), mMasterLocation.getPort()));
-    ClientContext.init();
 
     // Create default directory for insertion.
     mDefaultDir = "/usertable";
