@@ -40,81 +40,78 @@ public class AlluxioClient extends DB {
    */
   @Override
   public void cleanup() throws DBException {
-    if (INIT_COUNT.decrementAndGet() == 0) {
-      try {
-        mBlockMasterClient.close();
-        System.out.println("Allxio Block Master client is shut down successfully");
-      } catch (Exception e) {
-        System.err.println("Could not shut down Alluxio Block Master Client");
-      } finally {
-        if (mBlockMasterClient != null)
-          mBlockMasterClient = null;
-      }
-
-      try {
-        mFileSystemMasterClient.close();
-        System.out.println("Allxio FS Master client is shut down successfully");
-      } catch (Exception e) {
-        System.err.println("Could not shut down Alluxio FS Master client");
-      } finally {
-        if (mFileSystemMasterClient != null)
-          mFileSystemMasterClient = null;
-      }
+    try {
+      mBlockMasterClient.close();
+      System.out.println("Allxio Block Master client is shut down successfully");
+    } catch (Exception e) {
+      System.err.println("Could not shut down Alluxio Block Master Client");
+    } finally {
+      if (mBlockMasterClient != null)
+        mBlockMasterClient = null;
     }
+
+    try {
+      mFileSystemMasterClient.close();
+      System.out.println("Allxio FS Master client is shut down successfully");
+    } catch (Exception e) {
+      System.err.println("Could not shut down Alluxio FS Master client");
+    } finally {
+      if (mFileSystemMasterClient != null)
+        mFileSystemMasterClient = null;
+    }
+
   }
 
   @Override
   public void init() throws DBException {
-    INIT_COUNT.getAndIncrement();
-    synchronized (AlluxioClient.class) {
-      System.out.println("[Alluxio-YCSB] init");
+    System.out.println("[Alluxio-YCSB] init");
 
-      // Set this before loading the master.
-      String masterIpAddress = "localhost";
-      String masterPort = "19998";
-      String masterAddress = "alluxio://" + masterIpAddress + ":" + masterPort;
+    // Set this before loading the master.
+    String masterIpAddress = "localhost";
+    String masterPort = "19998";
+    String masterAddress = "alluxio://" + masterIpAddress + ":" + masterPort;
 
-      // TODO: Load configuration from property files.
-      if (masterAddress == null) {
-        try {
-          InputStream propFile = AlluxioClient.class.getClassLoader()
-                  .getResourceAsStream("alluxio.properties");
-          Properties props = new Properties(System.getProperties());
-          props.load(propFile);
-          masterAddress = props.getProperty("alluxio.master.address");
-          if (masterAddress == null) {
-            System.out.println("Can not load alluxio.master.address property from configuraiotn file");
-          }
-        } catch (Exception e) {
-          System.err.println("The property file doesn't exist");
-          e.printStackTrace();
-        }
-      }
-
-
-      mMasterLocation = new AlluxioURI(masterAddress);
-      Configuration.set(PropertyKey.MASTER_HOSTNAME, mMasterLocation.getHost());
-      Configuration.set(PropertyKey.MASTER_RPC_PORT, Integer.toString(mMasterLocation.getPort()));
-      Configuration.set(PropertyKey.SECURITY_AUTHENTICATION_TYPE, AuthType.NOSASL);
-      Configuration.set(PropertyKey.SECURITY_AUTHORIZATION_PERMISSION_ENABLED, false);
-
-      mFileSystemContext = FileSystemContext.INSTANCE;
-      mFileSystemMasterClient = mFileSystemContext.acquireMasterClient();
-      mBlockMasterClient = new RetryHandlingBlockMasterClient(
-              new InetSocketAddress(mMasterLocation.getHost(), mMasterLocation.getPort()));
-      ClientContext.init();
-
-      // Create default directory for insertion.
-      mDefaultDir = "/usertable";
-      AlluxioURI alluxioDefaultDir = new AlluxioURI(mDefaultDir);
-
+    // TODO: Load configuration from property files.
+    if (masterAddress == null) {
       try {
-        mFileSystemMasterClient.createDirectory(alluxioDefaultDir, CreateDirectoryOptions.defaults());
+        InputStream propFile = AlluxioClient.class.getClassLoader()
+                .getResourceAsStream("alluxio.properties");
+        Properties props = new Properties(System.getProperties());
+        props.load(propFile);
+        masterAddress = props.getProperty("alluxio.master.address");
+        if (masterAddress == null) {
+          System.out.println("Can not load alluxio.master.address property from configuraiotn file");
+        }
       } catch (Exception e) {
-        System.err.println("Could not create default directory " + mDefaultDir);
+        System.err.println("The property file doesn't exist");
         e.printStackTrace();
       }
     }
+
+
+    mMasterLocation = new AlluxioURI(masterAddress);
+    Configuration.set(PropertyKey.MASTER_HOSTNAME, mMasterLocation.getHost());
+    Configuration.set(PropertyKey.MASTER_RPC_PORT, Integer.toString(mMasterLocation.getPort()));
+    Configuration.set(PropertyKey.SECURITY_AUTHENTICATION_TYPE, AuthType.NOSASL);
+    Configuration.set(PropertyKey.SECURITY_AUTHORIZATION_PERMISSION_ENABLED, false);
+
+    mFileSystemContext = FileSystemContext.INSTANCE;
+    mFileSystemMasterClient = mFileSystemContext.acquireMasterClient();
+    mBlockMasterClient = new RetryHandlingBlockMasterClient(
+            new InetSocketAddress(mMasterLocation.getHost(), mMasterLocation.getPort()));
+    ClientContext.init();
+
+    // Create default directory for insertion.
+    mDefaultDir = "/usertable";
+    AlluxioURI alluxioDefaultDir = new AlluxioURI(mDefaultDir);
+
+    try {
+      mFileSystemMasterClient.createDirectory(alluxioDefaultDir, CreateDirectoryOptions.defaults());
+    } catch (Exception e) {
+      System.err.println("Could not create default directory " + mDefaultDir);
+      e.printStackTrace();
+    }
+
   }
 
   /**
