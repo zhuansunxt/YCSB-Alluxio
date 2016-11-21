@@ -82,7 +82,7 @@ public class AlluxioClient extends DB {
     Configuration.set(PropertyKey.MASTER_RPC_PORT, Integer.toString(mMasterLocation.getPort()));
     Configuration.set(PropertyKey.SECURITY_AUTHENTICATION_TYPE, AuthType.NOSASL);
     Configuration.set(PropertyKey.SECURITY_AUTHORIZATION_PERMISSION_ENABLED, false);
-    Configuration.set(PropertyKey.USER_FILE_MASTER_CLIENT_THREADS, 1000);
+    Configuration.set(PropertyKey.USER_FILE_MASTER_CLIENT_THREADS, 4000);     // Max number of threads.
 
     mFileSystemContext = FileSystemContext.INSTANCE;
     mFileSystemMasterClient = mFileSystemContext.acquireMasterClient();
