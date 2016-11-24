@@ -18,6 +18,7 @@ import com.yahoo.ycsb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.util.*;
@@ -55,28 +56,31 @@ public class AlluxioClient extends DB {
   public void init() throws DBException {
 
     // Set this before loading the master.
-    String masterIpAddress = "localhost";
+    String masterIpAddress = null;
     String masterPort = "19998";
-    String masterAddress = "alluxio://" + masterIpAddress + ":" + masterPort;
 
     // TODO: Load configuration from property files.
-    if (masterAddress == null) {
+    if (masterIpAddress == null) {
       try {
-        InputStream propFile = AlluxioClient.class.getClassLoader()
-                .getResourceAsStream("alluxio.properties");
+        InputStream propFile = new FileInputStream("alluxio/src/main/conf/alluxio.properties");
+        if (propFile == null) {
+          System.out.println("Unable to find properties file");
+          masterIpAddress = "localhost";
+        }
         Properties props = new Properties(System.getProperties());
         props.load(propFile);
-        masterAddress = props.getProperty("alluxio.master.address");
-        if (masterAddress == null) {
+        masterIpAddress = props.getProperty("alluxio.master.ipaddr");
+        if (masterIpAddress == null) {
           System.out.println("Can not load alluxio.master.address property from configuraiotn file");
         }
       } catch (Exception e) {
         System.err.println("The property file doesn't exist");
         e.printStackTrace();
+        return;
       }
     }
 
-
+    String masterAddress = "alluxio://" + masterIpAddress + ":" + masterPort;
     mMasterLocation = new AlluxioURI(masterAddress);
     Configuration.set(PropertyKey.MASTER_HOSTNAME, mMasterLocation.getHost());
     Configuration.set(PropertyKey.MASTER_RPC_PORT, Integer.toString(mMasterLocation.getPort()));
